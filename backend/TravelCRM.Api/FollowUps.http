@@ -1,0 +1,86 @@
+@baseUrl = http://localhost:5030/api/FollowUps
+@token = paste-a-development-jwt-here
+@followUpId = 1
+@leadId = 1
+
+### List follow-ups with filters and paging
+GET {{baseUrl}}?leadId={{leadId}}&status=Pending&page=1&pageSize=10
+Authorization: Bearer {{token}}
+
+### Today's follow-ups
+GET {{baseUrl}}/today?page=1&pageSize=10
+Authorization: Bearer {{token}}
+
+### Overdue follow-ups
+GET {{baseUrl}}/overdue?page=1&pageSize=10
+Authorization: Bearer {{token}}
+
+### Upcoming follow-ups
+GET {{baseUrl}}/upcoming?page=1&pageSize=10
+Authorization: Bearer {{token}}
+
+### Get a follow-up
+GET {{baseUrl}}/{{followUpId}}
+Authorization: Bearer {{token}}
+
+### Create a follow-up as Staff (assignment is derived from the JWT)
+POST {{baseUrl}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "leadId": 1,
+  "followUpType": "Call",
+  "subject": "Confirm travel dates",
+  "description": "Discuss the preferred departure week.",
+  "scheduledAt": "2026-11-06T15:00:00Z"
+}
+
+### Create a follow-up as Admin (active Staff assignment required)
+POST {{baseUrl}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "leadId": 1,
+  "assignedToUserId": 3,
+  "followUpType": "Email",
+  "subject": "Send itinerary options",
+  "description": "Share three package options.",
+  "scheduledAt": "2026-11-06T16:00:00Z"
+}
+
+### Update a pending follow-up
+PUT {{baseUrl}}/{{followUpId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "leadId": 1,
+  "followUpType": "Meeting",
+  "subject": "Review itinerary",
+  "description": "Discuss package options.",
+  "scheduledAt": "2026-11-07T16:00:00Z"
+}
+
+### Reassign follow-up (Admin only)
+PATCH {{baseUrl}}/{{followUpId}}/assignment
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "assignedToUserId": 3
+}
+
+### Complete and record outcome
+PATCH {{baseUrl}}/{{followUpId}}/complete
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "outcome": "Customer confirmed the dates and requested a revised quote."
+}
+
+### Cancel follow-up
+PATCH {{baseUrl}}/{{followUpId}}/cancel
+Authorization: Bearer {{token}}

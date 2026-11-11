@@ -1,0 +1,44 @@
+@TravelCRM.Api_HostAddress = http://localhost:5030
+@token = replace-with-a-valid-jwt
+@bookingId = 1
+@paymentId = 1
+
+### List payments with filters and pagination
+GET {{TravelCRM.Api_HostAddress}}/api/Payments?status=Completed&method=Cash&page=1&pageSize=10
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Booking payment history and server-calculated totals
+GET {{TravelCRM.Api_HostAddress}}/api/Payments/booking/{{bookingId}}
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Record a pending payment
+POST {{TravelCRM.Api_HostAddress}}/api/Payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "bookingId": {{bookingId}},
+  "amount": 100.00,
+  "paymentType": "Advance",
+  "paymentMethod": "UPI",
+  "paymentStatus": "Pending",
+  "paymentDate": "2026-11-07T12:00:00Z",
+  "transactionReference": "MANUAL-EXAMPLE",
+  "notes": "Example only"
+}
+
+### Complete or fail a pending payment
+PATCH {{TravelCRM.Api_HostAddress}}/api/Payments/{{paymentId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "Completed"
+}
+
+### Dashboard payment metrics by currency
+GET {{TravelCRM.Api_HostAddress}}/api/Payments/summary
+Authorization: Bearer {{token}}
+Accept: application/json

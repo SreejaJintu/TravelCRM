@@ -1,0 +1,12 @@
+@TravelCRM.Api_HostAddress = http://localhost:5030
+@token = replace-with-a-valid-jwt
+
+### Dashboard summary for the current month in the business timezone
+GET {{TravelCRM.Api_HostAddress}}/api/Dashboard/summary
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Dashboard summary for a custom date range
+GET {{TravelCRM.Api_HostAddress}}/api/Dashboard/summary?fromDate=2026-01-01&toDate=2026-12-31
+Authorization: Bearer {{token}}
+Accept: application/json

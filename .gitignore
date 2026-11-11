@@ -1,0 +1,24 @@
+# Node / React
+node_modules/
+dist/
+.vite/
+.env
+.env.*
+!.env.example
+
+# .NET
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Secrets and local configuration
+appsettings.Development.json
+
+# Logs
+*.log
+
+# IDE
+.idea/
+.vscode/

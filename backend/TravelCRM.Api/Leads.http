@@ -1,0 +1,87 @@
+@baseUrl = http://localhost:5030/api/Leads
+@token = paste-a-development-jwt-here
+@leadId = 1
+
+### Get a page of leads
+GET {{baseUrl}}?page=1&pageSize=10
+Authorization: Bearer {{token}}
+
+### Search leads
+GET {{baseUrl}}?search=lisbon&page=1&pageSize=10
+Authorization: Bearer {{token}}
+
+### Get assignable Staff (Admin only)
+GET {{baseUrl}}/assignable-staff
+Authorization: Bearer {{token}}
+
+### Get one lead
+GET {{baseUrl}}/{{leadId}}
+Authorization: Bearer {{token}}
+
+### Create a lead
+POST {{baseUrl}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fullName": "Jordan Lee",
+  "phone": "+1 415 555 0134",
+  "email": "jordan.lee@example.com",
+  "destination": "Lisbon, Portugal",
+  "travelStartDate": "2026-07-12",
+  "travelEndDate": "2026-07-20",
+  "numberOfAdults": 2,
+  "numberOfChildren": 1,
+  "budget": 5800.00,
+  "leadSource": "Website",
+  "notes": "Interested in a family-friendly itinerary."
+}
+
+### Update lead details
+PUT {{baseUrl}}/{{leadId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fullName": "Jordan Lee",
+  "phone": "+1 415 555 0134",
+  "email": "jordan.lee@example.com",
+  "destination": "Porto, Portugal",
+  "travelStartDate": "2026-07-12",
+  "travelEndDate": "2026-07-20",
+  "numberOfAdults": 2,
+  "numberOfChildren": 1,
+  "budget": 6200.00,
+  "leadSource": "Website",
+  "notes": "Updated destination and budget."
+}
+
+### Change lead status
+PATCH {{baseUrl}}/{{leadId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "Qualified"
+}
+
+### Assign or clear Staff assignment (Admin only)
+PATCH {{baseUrl}}/{{leadId}}/assignment
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "assignedToUserId": 3
+}
+
+### Convert lead to Customer
+POST {{baseUrl}}/{{leadId}}/convert
+Authorization: Bearer {{token}}
+
+### Deactivate lead
+DELETE {{baseUrl}}/{{leadId}}
+Authorization: Bearer {{token}}
+
+### Reactivate lead
+PATCH {{baseUrl}}/{{leadId}}/activate
+Authorization: Bearer {{token}}

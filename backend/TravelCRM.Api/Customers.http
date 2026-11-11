@@ -1,0 +1,55 @@
+@baseUrl = http://localhost:5030/api/Customers
+@token = paste-a-development-jwt-here
+@customerId = 1
+
+### Get a page of customers
+GET {{baseUrl}}?page=1&pageSize=10
+Authorization: Bearer {{token}}
+
+### Search customers
+GET {{baseUrl}}?search=lee&page=1&pageSize=10
+Authorization: Bearer {{token}}
+
+### Get one customer
+GET {{baseUrl}}/{{customerId}}
+Authorization: Bearer {{token}}
+
+### Create a customer
+POST {{baseUrl}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fullName": "Jordan Lee",
+  "email": "jordan.lee@example.com",
+  "phone": "+1 415 555 0134",
+  "dateOfBirth": "1992-08-14",
+  "gender": "Other",
+  "address": "18 Market Street, San Francisco, CA"
+}
+
+### Update a customer
+PUT {{baseUrl}}/{{customerId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fullName": "Jordan Lee",
+  "email": "jordan.lee@example.com",
+  "phone": "+1 415 555 0168",
+  "dateOfBirth": "1992-08-14",
+  "gender": "Other",
+  "address": "22 Market Street, San Francisco, CA"
+}
+
+### Deactivate a customer
+DELETE {{baseUrl}}/{{customerId}}
+Authorization: Bearer {{token}}
+
+### Reactivate a customer
+PATCH {{baseUrl}}/{{customerId}}/activate
+Authorization: Bearer {{token}}
+
+### Verify missing-customer behavior
+GET {{baseUrl}}/2147483647
+Authorization: Bearer {{token}}
