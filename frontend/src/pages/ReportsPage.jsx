@@ -53,7 +53,10 @@ const money = (value, currency) => {
 const formatDate = (value) => {
     if (!value) return "—";
     const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
-    return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString();
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = date.toLocaleString("default", { month: "short" });
+    const year = date.getFullYear();
+    return Number.isNaN(date.getTime()) ? "—" : `${day} ${month} ${year}`;
 };
 
 const messageFrom = (error) =>
@@ -514,7 +517,7 @@ export default function ReportsPage() {
                                                     {row.paymentStatus}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-[#20332f]">{row.paymentDate ? new Date(row.paymentDate).toLocaleString() : "—"}</td>
+                                            <td className="px-4 py-3 text-sm text-[#20332f]">{row.paymentDate ? formatDate(row.paymentDate) : "—"}</td>
                                         </>
                                     )}
                                     {activeTab === "revenue" && (

@@ -14,7 +14,10 @@ const money = (value, currency) => {
 const formatDate = (value) => {
     if (!value) return "—";
     const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
-    return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString();
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = date.toLocaleString("default", { month: "short" });
+    const year = date.getFullYear();
+    return Number.isNaN(date.getTime()) ? "—" : `${day} ${month} ${year}`;
 };
 
 const columnsByType = {
@@ -81,7 +84,7 @@ const rowsByType = {
             money(row.amount, row.currency),
             row.paymentMethod,
             row.paymentStatus,
-            row.paymentDate ? new Date(row.paymentDate).toLocaleString() : "—",
+            row.paymentDate ? formatDate(row.paymentDate) : "—",
         ]),
     revenue: (data) =>
         (data || []).map((row) => [
@@ -156,9 +159,17 @@ export default function ExportButtons({ reportType, data, meta }) {
             doc.setFontSize(16);
             doc.text(title, 14, 14);
             doc.setFontSize(10);
+            const formatDateDisplay = (dateStr) => {
+                if (!dateStr) return "—";
+                const date = new Date(dateStr);
+                const day = String(date.getDate()).padStart(2, "0");
+                const month = date.toLocaleString("default", { month: "short" });
+                const year = date.getFullYear();
+                return Number.isNaN(date.getTime()) ? "—" : `${day} ${month} ${year}`;
+            };
             doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 24);
             if (meta?.fromDate || meta?.toDate) {
-                doc.text(`Period: ${meta.fromDate ?? "—"} to ${meta.toDate ?? "—"}`, 14, 32);
+                doc.text(`Period: ${formatDateDisplay(meta.fromDate)} to ${formatDateDisplay(meta.toDate)}`, 14, 32);
             }
 
             doc.autoTable({
