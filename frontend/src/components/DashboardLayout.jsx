@@ -11,7 +11,7 @@ const navigation = [
     { label: "Travel packages", icon: "packages", path: "/travel-packages" },
     { label: "Bookings", icon: "bookings", path: "/bookings" },
     { label: "Payments", icon: "payments", path: "/payments" },
-    { label: "Reports", icon: "reports" }
+    { label: "Reports", icon: "reports", path: "/reports" }
 ];
 
 function initialsFor(name) {

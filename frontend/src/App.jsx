@@ -11,6 +11,7 @@ import FollowUpsPage from "./pages/FollowUpsPage";
 import TravelPackagesPage from "./pages/TravelPackagesPage";
 import BookingsPage from "./pages/BookingsPage";
 import PaymentsPage from "./pages/PaymentsPage";
+import ReportsPage from "./pages/ReportsPage";
 
 function App() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -47,6 +48,7 @@ function App() {
         <Route path="/travel-packages" element={<TravelPackagesPage />} />
         <Route path="/bookings" element={<BookingsPage />} />
         <Route path="/payments" element={<PaymentsPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
       </Route>
       <Route element={<ProtectedRoute allowedRole="Admin" />}>
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
