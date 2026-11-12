@@ -11,6 +11,38 @@ $env:Cloudinary__ApiKey = "<api-key>"
 $env:Cloudinary__ApiSecret = "<api-secret>"
 ```
 
+## Production configuration
+
+Set `ASPNETCORE_ENVIRONMENT=Production` and configure these environment
+variables in the hosting control panel. Do not put production credentials in
+`appsettings.json`:
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `ConnectionStrings__DefaultConnection` | Yes | MonsterASP SQL Server connection string |
+| `Jwt__Key` | Yes | JWT signing key; at least 32 UTF-8 bytes |
+| `Jwt__Issuer` | Yes | JWT issuer |
+| `Jwt__Audience` | Yes | JWT audience |
+| `Cors__AllowedOrigins` | Yes | Comma-separated HTTPS frontend origin(s), without paths |
+| `Cloudinary__CloudName` | For image uploads | Cloudinary cloud name |
+| `Cloudinary__ApiKey` | For image uploads | Cloudinary API key |
+| `Cloudinary__ApiSecret` | For image uploads | Cloudinary API secret |
+| `Swagger__Enabled` | No | Set to `true` only to expose Swagger in Production |
+| `Jwt__ExpiryMinutes` | No | JWT lifetime in minutes; defaults to 60 |
+
+Development continues to allow localhost and 127.0.0.1 origins. Production
+allows only the origins in `Cors__AllowedOrigins`. `/health` reports application
+and database connectivity without returning connection details. HTTPS
+redirection is enabled.
+
+The API does not apply migrations at startup. The repository currently contains
+eight migrations, from `20261103133215_CreateAuthenticationTables` through
+`20261107065716_AddPayments`. Applied-vs-pending status on the MonsterASP
+database has not been checked; `dotnet ef migrations list --no-connect` lists
+the code migrations but cannot determine which are applied. Do not run
+`dotnet ef database update` against a restored production database without
+review and explicit approval.
+
 The Cloudinary API secret must remain server-side. Do not put these values in
 frontend configuration or commit actual credentials. Cloudinary image requests
 are placed in `travelcrm/packages/{packageCode}`. The maximum individual file

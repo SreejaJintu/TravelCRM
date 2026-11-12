@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using TravelCRM.Api.Data;
@@ -10,16 +11,36 @@ using TravelCRM.Api.Services;
 using TravelCRM.Api.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
+var isProduction = builder.Environment.IsProduction();
+
+string? productionCorsOrigins = null;
+if (isProduction)
+{
+    _ = RequireEnvironmentVariable("ConnectionStrings__DefaultConnection");
+    _ = RequireEnvironmentVariable("Jwt__Key");
+    _ = RequireEnvironmentVariable("Jwt__Issuer");
+    _ = RequireEnvironmentVariable("Jwt__Audience");
+    productionCorsOrigins = RequireEnvironmentVariable("Cors__AllowedOrigins");
+}
 
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("LocalFrontend", policy =>
-        policy.SetIsOriginAllowed(origin =>
-                Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
-                (uri.Host == "localhost" || uri.Host == "127.0.0.1"))
-            .AllowAnyHeader()
-            .AllowAnyMethod());
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddPolicy("Frontend", policy =>
+            policy.SetIsOriginAllowed(IsLocalDevelopmentOrigin)
+                .AllowAnyHeader()
+                .AllowAnyMethod());
+    }
+    else
+    {
+        var allowedOrigins = ParseProductionOrigins(productionCorsOrigins);
+        options.AddPolicy("Frontend", policy =>
+            policy.WithOrigins(allowedOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod());
+    }
 });
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -27,6 +48,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")
     )
 );
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database");
 
 // Repository and Service registrations
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -56,6 +79,12 @@ builder.Services.Configure<PackageImageOptions>(
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT Key is missing.");
+
+if (isProduction && Encoding.UTF8.GetByteCount(jwtKey) < 32)
+{
+    throw new InvalidOperationException(
+        "Production JWT Key must be at least 32 bytes long.");
+}
 
 builder.Services.AddAuthentication(
         JwtBearerDefaults.AuthenticationScheme)
@@ -111,13 +140,73 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else if (app.Environment.IsProduction() &&
+         builder.Configuration.GetValue<bool>("Swagger:Enabled"))
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
 
-app.UseCors("LocalFrontend");
+app.UseRouting();
+app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();
+
+static string RequireEnvironmentVariable(string name)
+{
+    var value = Environment.GetEnvironmentVariable(name);
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        throw new InvalidOperationException(
+            $"Required production environment variable '{name}' is not configured.");
+    }
+
+    return value;
+}
+
+static bool IsLocalDevelopmentOrigin(string origin) =>
+    Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+    (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
+    (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+     uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase));
+
+static string[] ParseProductionOrigins(string? configuredOrigins)
+{
+    var origins = configuredOrigins?
+        .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+        ?? [];
+
+    if (origins.Length == 0 || origins.Any(origin =>
+            !Uri.TryCreate(origin, UriKind.Absolute, out var uri) ||
+            uri.Scheme != Uri.UriSchemeHttps ||
+            uri.AbsolutePath != "/" ||
+            !string.IsNullOrEmpty(uri.Query) ||
+            !string.IsNullOrEmpty(uri.Fragment) ||
+            !string.IsNullOrEmpty(uri.UserInfo)))
+    {
+        throw new InvalidOperationException(
+            "Cors__AllowedOrigins must contain comma-separated HTTPS origins without paths.");
+    }
+
+    return origins;
+}
+
+sealed class DatabaseHealthCheck(ApplicationDbContext dbContext) : IHealthCheck
+{
+    public async Task<HealthCheckResult> CheckHealthAsync(
+        HealthCheckContext context,
+        CancellationToken cancellationToken = default)
+    {
+        var canConnect = await dbContext.Database.CanConnectAsync(cancellationToken);
+        return canConnect
+            ? HealthCheckResult.Healthy()
+            : HealthCheckResult.Unhealthy("Database is unavailable.");
+    }
+}
