@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "../context/useAuth";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import DashboardIcon from "../components/DashboardIcon";
 import ExportButtons from "../components/ExportButtons";
@@ -63,18 +62,16 @@ const messageFrom = (error) =>
     error.response?.data?.detail || error.response?.data?.title || error.message || "Report could not be loaded.";
 
 export default function ReportsPage() {
-    const { user } = useAuth();
-    const isAdmin = user?.role?.toLowerCase() === "admin";
-    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "bookings");
+    const initialTab = searchParams.get("tab") || "bookings";
+    const [activeTab, setActiveTab] = useState(initialTab);
 
     // Booking report state
     const [bookingFrom, setBookingFrom] = useState("");
     const [bookingTo, setBookingTo] = useState("");
     const [bookingStatus, setBookingStatus] = useState("");
     const [bookingReport, setBookingReport] = useState(null);
-    const [bookingLoading, setBookingLoading] = useState(false);
+    const [bookingLoading, setBookingLoading] = useState(initialTab === "bookings");
     const [bookingError, setBookingError] = useState("");
 
     // Payment report state
@@ -83,29 +80,27 @@ export default function ReportsPage() {
     const [paymentStatus, setPaymentStatus] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("");
     const [paymentReport, setPaymentReport] = useState(null);
-    const [paymentLoading, setPaymentLoading] = useState(false);
+    const [paymentLoading, setPaymentLoading] = useState(initialTab === "payments");
     const [paymentError, setPaymentError] = useState("");
 
     // Revenue report state
     const [revenueFrom, setRevenueFrom] = useState("");
     const [revenueTo, setRevenueTo] = useState("");
     const [revenueReport, setRevenueReport] = useState(null);
-    const [revenueLoading, setRevenueLoading] = useState(false);
+    const [revenueLoading, setRevenueLoading] = useState(initialTab === "revenue");
     const [revenueError, setRevenueError] = useState("");
 
     // Customer report state
     const [customerReport, setCustomerReport] = useState(null);
-    const [customerLoading, setCustomerLoading] = useState(false);
+    const [customerLoading, setCustomerLoading] = useState(initialTab === "customers");
     const [customerError, setCustomerError] = useState("");
 
     // Lead conversion report state
     const [leadReport, setLeadReport] = useState(null);
-    const [leadLoading, setLeadLoading] = useState(false);
+    const [leadLoading, setLeadLoading] = useState(initialTab === "leads");
     const [leadError, setLeadError] = useState("");
 
     const fetchBookingReport = useCallback(async () => {
-        setBookingLoading(true);
-        setBookingError("");
         try {
             const data = await getBookingReport({
                 fromDate: bookingFrom || undefined,
@@ -121,8 +116,6 @@ export default function ReportsPage() {
     }, [bookingFrom, bookingTo, bookingStatus]);
 
     const fetchPaymentReport = useCallback(async () => {
-        setPaymentLoading(true);
-        setPaymentError("");
         try {
             const data = await getPaymentReport({
                 fromDate: paymentFrom || undefined,
@@ -139,8 +132,6 @@ export default function ReportsPage() {
     }, [paymentFrom, paymentTo, paymentStatus, paymentMethod]);
 
     const fetchRevenueReport = useCallback(async () => {
-        setRevenueLoading(true);
-        setRevenueError("");
         try {
             const data = await getRevenueReport({
                 fromDate: revenueFrom || undefined,
@@ -155,8 +146,6 @@ export default function ReportsPage() {
     }, [revenueFrom, revenueTo]);
 
     const fetchCustomerReport = useCallback(async () => {
-        setCustomerLoading(true);
-        setCustomerError("");
         try {
             const data = await getCustomerReport();
             setCustomerReport(data);
@@ -168,8 +157,6 @@ export default function ReportsPage() {
     }, []);
 
     const fetchLeadReport = useCallback(async () => {
-        setLeadLoading(true);
-        setLeadError("");
         try {
             const data = await getLeadConversionReport();
             setLeadReport(data);
@@ -180,12 +167,31 @@ export default function ReportsPage() {
         }
     }, []);
 
+    const prepareReportLoad = (reportType) => {
+        setBookingLoading(reportType === "bookings");
+        setPaymentLoading(reportType === "payments");
+        setRevenueLoading(reportType === "revenue");
+        setCustomerLoading(reportType === "customers");
+        setLeadLoading(reportType === "leads");
+        setBookingError("");
+        setPaymentError("");
+        setRevenueError("");
+        setCustomerError("");
+        setLeadError("");
+    };
+
     useEffect(() => {
-        if (activeTab === "bookings") fetchBookingReport();
-        else if (activeTab === "payments") fetchPaymentReport();
-        else if (activeTab === "revenue") fetchRevenueReport();
-        else if (activeTab === "customers") fetchCustomerReport();
-        else if (activeTab === "leads") fetchLeadReport();
+        const loadActiveReport = async () => {
+            await Promise.resolve();
+
+            if (activeTab === "bookings") fetchBookingReport();
+            else if (activeTab === "payments") fetchPaymentReport();
+            else if (activeTab === "revenue") fetchRevenueReport();
+            else if (activeTab === "customers") fetchCustomerReport();
+            else if (activeTab === "leads") fetchLeadReport();
+        };
+
+        void loadActiveReport();
     }, [activeTab, fetchBookingReport, fetchPaymentReport, fetchRevenueReport, fetchCustomerReport, fetchLeadReport]);
 
     const getReportData = () => {
@@ -239,7 +245,10 @@ export default function ReportsPage() {
                 <input
                     type="date"
                     value={bookingFrom}
-                    onChange={(e) => setBookingFrom(e.target.value)}
+                    onChange={(e) => {
+                        prepareReportLoad("bookings");
+                        setBookingFrom(e.target.value);
+                    }}
                     className="h-10 w-full rounded-md border border-[#dce6e2] bg-white px-3 text-sm text-[#20332f] focus:border-[#176b68] focus:ring-4 focus:ring-[#176b68]/10"
                 />
             </div>
@@ -248,7 +257,10 @@ export default function ReportsPage() {
                 <input
                     type="date"
                     value={bookingTo}
-                    onChange={(e) => setBookingTo(e.target.value)}
+                    onChange={(e) => {
+                        prepareReportLoad("bookings");
+                        setBookingTo(e.target.value);
+                    }}
                     className="h-10 w-full rounded-md border border-[#dce6e2] bg-white px-3 text-sm text-[#20332f] focus:border-[#176b68] focus:ring-4 focus:ring-[#176b68]/10"
                 />
             </div>
@@ -256,7 +268,10 @@ export default function ReportsPage() {
                 <label className="text-xs font-semibold text-[#526b65]">Status</label>
                 <select
                     value={bookingStatus}
-                    onChange={(e) => setBookingStatus(e.target.value)}
+                    onChange={(e) => {
+                        prepareReportLoad("bookings");
+                        setBookingStatus(e.target.value);
+                    }}
                     className="h-10 w-full rounded-md border border-[#dce6e2] bg-white px-3 text-sm text-[#20332f] focus:border-[#176b68] focus:ring-4 focus:ring-[#176b68]/10"
                 >
                     <option value="">All Statuses</option>
@@ -269,7 +284,10 @@ export default function ReportsPage() {
                 <label className="text-xs font-semibold text-[#526b65]">&nbsp;</label>
                 <button
                     type="button"
-                    onClick={fetchBookingReport}
+                    onClick={() => {
+                        prepareReportLoad("bookings");
+                        fetchBookingReport();
+                    }}
                     disabled={bookingLoading}
                     className="inline-flex items-center gap-2 rounded-md border border-[#176b68] bg-[#176b68] px-4 py-2 text-sm font-semibold text-white hover:bg-[#145e5b] disabled:opacity-40"
                 >
@@ -286,7 +304,10 @@ export default function ReportsPage() {
                 <input
                     type="date"
                     value={paymentFrom}
-                    onChange={(e) => setPaymentFrom(e.target.value)}
+                    onChange={(e) => {
+                        prepareReportLoad("payments");
+                        setPaymentFrom(e.target.value);
+                    }}
                     className="h-10 w-full rounded-md border border-[#dce6e2] bg-white px-3 text-sm text-[#20332f] focus:border-[#176b68] focus:ring-4 focus:ring-[#176b68]/10"
                 />
             </div>
@@ -295,7 +316,10 @@ export default function ReportsPage() {
                 <input
                     type="date"
                     value={paymentTo}
-                    onChange={(e) => setPaymentTo(e.target.value)}
+                    onChange={(e) => {
+                        prepareReportLoad("payments");
+                        setPaymentTo(e.target.value);
+                    }}
                     className="h-10 w-full rounded-md border border-[#dce6e2] bg-white px-3 text-sm text-[#20332f] focus:border-[#176b68] focus:ring-4 focus:ring-[#176b68]/10"
                 />
             </div>
@@ -303,7 +327,10 @@ export default function ReportsPage() {
                 <label className="text-xs font-semibold text-[#526b65]">Status</label>
                 <select
                     value={paymentStatus}
-                    onChange={(e) => setPaymentStatus(e.target.value)}
+                    onChange={(e) => {
+                        prepareReportLoad("payments");
+                        setPaymentStatus(e.target.value);
+                    }}
                     className="h-10 w-full rounded-md border border-[#dce6e2] bg-white px-3 text-sm text-[#20332f] focus:border-[#176b68] focus:ring-4 focus:ring-[#176b68]/10"
                 >
                     <option value="">All Statuses</option>
@@ -316,7 +343,10 @@ export default function ReportsPage() {
                 <label className="text-xs font-semibold text-[#526b65]">Method</label>
                 <select
                     value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    onChange={(e) => {
+                        prepareReportLoad("payments");
+                        setPaymentMethod(e.target.value);
+                    }}
                     className="h-10 w-full rounded-md border border-[#dce6e2] bg-white px-3 text-sm text-[#20332f] focus:border-[#176b68] focus:ring-4 focus:ring-[#176b68]/10"
                 >
                     <option value="">All Methods</option>
@@ -329,7 +359,10 @@ export default function ReportsPage() {
                 <label className="text-xs font-semibold text-[#526b65]">&nbsp;</label>
                 <button
                     type="button"
-                    onClick={fetchPaymentReport}
+                    onClick={() => {
+                        prepareReportLoad("payments");
+                        fetchPaymentReport();
+                    }}
                     disabled={paymentLoading}
                     className="inline-flex items-center gap-2 rounded-md border border-[#176b68] bg-[#176b68] px-4 py-2 text-sm font-semibold text-white hover:bg-[#145e5b] disabled:opacity-40"
                 >
@@ -346,7 +379,10 @@ export default function ReportsPage() {
                 <input
                     type="date"
                     value={revenueFrom}
-                    onChange={(e) => setRevenueFrom(e.target.value)}
+                    onChange={(e) => {
+                        prepareReportLoad("revenue");
+                        setRevenueFrom(e.target.value);
+                    }}
                     className="h-10 w-full rounded-md border border-[#dce6e2] bg-white px-3 text-sm text-[#20332f] focus:border-[#176b68] focus:ring-4 focus:ring-[#176b68]/10"
                 />
             </div>
@@ -355,7 +391,10 @@ export default function ReportsPage() {
                 <input
                     type="date"
                     value={revenueTo}
-                    onChange={(e) => setRevenueTo(e.target.value)}
+                    onChange={(e) => {
+                        prepareReportLoad("revenue");
+                        setRevenueTo(e.target.value);
+                    }}
                     className="h-10 w-full rounded-md border border-[#dce6e2] bg-white px-3 text-sm text-[#20332f] focus:border-[#176b68] focus:ring-4 focus:ring-[#176b68]/10"
                 />
             </div>
@@ -363,7 +402,10 @@ export default function ReportsPage() {
                 <label className="text-xs font-semibold text-[#526b65]">&nbsp;</label>
                 <button
                     type="button"
-                    onClick={fetchRevenueReport}
+                    onClick={() => {
+                        prepareReportLoad("revenue");
+                        fetchRevenueReport();
+                    }}
                     disabled={revenueLoading}
                     className="inline-flex items-center gap-2 rounded-md border border-[#176b68] bg-[#176b68] px-4 py-2 text-sm font-semibold text-white hover:bg-[#145e5b] disabled:opacity-40"
                 >
@@ -392,7 +434,10 @@ export default function ReportsPage() {
                     <button
                         key={tab.key}
                         type="button"
-                        onClick={() => setActiveTab(tab.key)}
+                        onClick={() => {
+                            setActiveTab(tab.key);
+                            prepareReportLoad(tab.key);
+                        }}
                         className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
                             activeTab === tab.key
                                 ? "border-b-2 border-[#176b68] text-[#176b68] bg-[#e8f2f0]"

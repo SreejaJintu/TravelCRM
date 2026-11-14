@@ -149,6 +149,10 @@ else if (app.Environment.IsProduction() &&
 
 app.UseHttpsRedirection();
 
+// Serve React frontend files from wwwroot
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseRouting();
 app.UseCors("Frontend");
 app.UseAuthentication();
@@ -156,6 +160,12 @@ app.UseAuthorization();
 
 app.MapHealthChecks("/health");
 app.MapControllers();
+
+app.MapFallback("/api/{**path}", () => Results.NotFound())
+    .ExcludeFromDescription();
+
+// Handle React client-side routes
+app.MapFallbackToFile("index.html");
 
 app.Run();
 
