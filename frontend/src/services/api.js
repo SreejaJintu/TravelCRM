@@ -1,12 +1,18 @@
+
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.DEV
+    ? "http://localhost:5030/api"
+    : "https://travelcrmhost.runasp.net/api";
+
 const api = axios.create({
-    baseURL: "http://localhost:5030/api",
+    baseURL: API_BASE_URL,
     headers: {
         "Content-Type": "application/json"
     }
 });
 
+// Attach JWT token to every request
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem("token");
@@ -20,6 +26,7 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+// Handle unauthorized responses
 api.interceptors.response.use(
     (response) => response,
     (error) => {
